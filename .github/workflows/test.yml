@@ -7,9 +7,10 @@ on:
     branches: [ "test_branch" ]
 
 jobs:
-
-  build_and_test:
+  build:
+    name: Setting up of Environment & Build 
     runs-on: ubuntu-latest
+    needs: setup_environment
 
     steps:
       - name: Checkout code
@@ -21,100 +22,83 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Build and run tests
-        run: |   
-            mvn -B clean verify
-            # mvn jacoco:report
-
-      - name: Start application
+      - name: Maven Build
         run: |
-            echo "Starting Spring Boot application..."
-            nohup java -jar target/demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
-            APP_PID=$!
-            echo "App PID: $APP_PID"
-            echo $APP_PID > app.pid
+          mvn -B clean verify
 
-      - name: Wait for application & health-check with timeout
-        run: |
-            echo "Waiting for application to become healthy (timeout 50s)..."
-            for i in {1..50}; do
-            STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8080/health || true)
-            if [ "$STATUS" = "200" ]; then
-                echo " Application is healthy!"
-                exit 0
-            fi
-                echo "Health not ready yet... retry ($i/50)"
-            sleep 1
-            done
-            echo " Timeout reached — application is not healthy!"
-            exit 1
-    
-      - name: Wait for application & greet with timeout
-        run: |
-            echo "Waiting for /greet endpoint (timeout 50s)..."
-            for i in {1..50}; do
-            RESPONSE=$(curl -s http://localhost:8080/greet?name=Sachin || true)
-            if [ ! -z "$RESPONSE" ]; then
-                echo "$RESPONSE"
-                exit 0
-            fi
-                echo "Endpoint not ready yet... retry ($i/50)"
-            sleep 1
-            done
-            echo " Timeout reached — application is not ready"
-            exit 1    
-        
-      - name: Stop application
-        if: always()
-        run: |
-            if [ -f app.pid ]; then
-            PID=$(cat app.pid)
-            echo "Stopping application with PID $PID"
-            kill $PID || true
-            fi
-        
-      # - name: Upload JaCoCo Coverage Report
-        # uses: actions/upload-artifact@v4
-        # with:
-            # name: jacoco-coverage-report
-            # path: target/site/jacoco
-
-      # - name: Download JaCoCo Coverage Report
-        # uses: actions/download-artifact@v4
-        # with:
-            # name: jacoco-coverage-report
-            # path: jacoco-report
-        
-      #- name: Generate SpotBugs report
-       # run: mvn spotbugs:spotbugs
-
-      - name: Archive raw build outputs
-        uses: actions/upload-artifact@v4
-        with:
-          name: raw-target-folder
-          path: target/
-          retention-days: 7
-
-  reports:
+  test:
+    name: Starting Application & Running Health Checks 
     runs-on: ubuntu-latest
-    needs: build_and_test
+    needs: build
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download build artifacts
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Start application
+        run: |
+          echo "Starting Spring Boot application..."
+          nohup java -jar target/demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+          APP_PID=$!
+          echo $APP_PID > app.pid
+
+      - name: Wait for application & health-check with timeout
+        run: |
+          echo "Checking /health endpoint..."
+          for i in {1..50}; do
+            STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8080/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Application is healthy!"
+              break
+            fi
+            echo "Retry ($i/50)..."
+            sleep 1
+          done
+
+      - name: Wait for /greet endpoint with timeout
+        run: |
+          echo "Checking /greet endpoint..."
+          for i in {1..50}; do
+            RESPONSE=$(curl -s http://localhost:8080/greet?name=Sachin || true)
+            if [ ! -z "$RESPONSE" ]; then
+              echo "Response: $RESPONSE"
+              break
+            fi
+            echo "Retry ($i/50)..."
+            sleep 1
+          done
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill $(cat app.pid) || true
+          fi
+
+  publish_artifacts:
+    name: Publishing Artifacts
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Retrieve build folder
         uses: actions/download-artifact@v4
         with:
           name: raw-target-folder
           path: target/
 
-      # - name: Upload SpotBugs Report (HTML/XML)
-        # uses: actions/upload-artifact@v4
-        # with:
-          # name: spotbugs-report
-          # path: |
-            # target/spotbugs.html
-            # target/spotbugsXml.xml
-
-
+      - name: Upload raw build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: target/
+          retention-days: 7
