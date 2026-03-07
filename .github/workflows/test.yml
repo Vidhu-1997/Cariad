@@ -24,7 +24,7 @@ jobs:
       - name: Build and run tests
         run: mvn -B  clean verify
       - name: starting application
-        run: java -jar  demo-0.0.1-SNAPSHOT.jar
+        run: java -jar  target/demo-0.0.1-SNAPSHOT.jar
 
       #- name: Generate SpotBugs report
        # run: mvn spotbugs:spotbugs
