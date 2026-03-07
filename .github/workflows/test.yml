@@ -22,7 +22,7 @@ jobs:
           java-version: 17
 
       - name: Build and run tests
-        run: mvn -B clean verify
+        run: mvn -B  -f java-health/simple-java-health/pom.xml  clean verify
 
       - name: Generate SpotBugs report
         run: mvn spotbugs:spotbugs
