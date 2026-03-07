@@ -1,0 +1,63 @@
+name: Java Maven CI Pipeline
+
+on:
+  push:
+    branches: [ "test_branch" ]
+  pull_request:
+    branches: [ "test_branch" ]
+
+jobs:
+
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build and run tests
+        run: mvn -B clean verify
+
+      - name: Generate SpotBugs report
+        run: mvn spotbugs:spotbugs
+
+      - name: Archive raw build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-target-folder
+          path: target/
+          retention-days: 7
+
+  reports:
+    runs-on: ubuntu-latest
+    needs: build_and_test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: raw-target-folder
+          path: target/
+
+      - name: Upload SpotBugs Report (HTML/XML)
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: |
+            target/spotbugs.html
+            target/spotbugsXml.xml
+
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
