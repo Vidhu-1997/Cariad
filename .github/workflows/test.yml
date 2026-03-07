@@ -22,10 +22,10 @@ jobs:
           java-version: 17
 
       - name: Build and run tests
-        run: mvn -B  -f java-health/simple-java-health/pom.xml  clean verify
+        run: mvn -B  clean verify
 
-      - name: Generate SpotBugs report
-        run: mvn spotbugs:spotbugs
+      #- name: Generate SpotBugs report
+       # run: mvn spotbugs:spotbugs
 
       - name: Archive raw build outputs
         uses: actions/upload-artifact@v4
@@ -48,16 +48,16 @@ jobs:
           name: raw-target-folder
           path: target/
 
-      - name: Upload SpotBugs Report (HTML/XML)
-        uses: actions/upload-artifact@v4
-        with:
-          name: spotbugs-report
-          path: |
-            target/spotbugs.html
-            target/spotbugsXml.xml
+      # - name: Upload SpotBugs Report (HTML/XML)
+        # uses: actions/upload-artifact@v4
+        # with:
+          # name: spotbugs-report
+          # path: |
+            # target/spotbugs.html
+            # target/spotbugsXml.xml
 
-      - name: Upload JaCoCo Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco/
+      # - name: Upload JaCoCo Coverage Report
+        # uses: actions/upload-artifact@v4
+        # with:
+          # name: jacoco-report
+          # path: target/site/jacoco/
