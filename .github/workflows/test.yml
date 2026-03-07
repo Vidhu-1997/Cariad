@@ -22,7 +22,10 @@ jobs:
           java-version: 17
 
       - name: Build and run tests
-        run: mvn -B  clean verify
+        run: |   
+            mvn -B clean verify
+            mvn jacoco:report
+
       - name: Start application
         run: |
             echo "Starting Spring Boot application..."
@@ -45,24 +48,7 @@ jobs:
             done
             echo " Timeout reached — application is not healthy!"
             exit 1
-        
-        
-      # - name: Wait for application & greet with timeout
-        # run: |
-            # echo "Waiting for application to greet (timeout 50s)..."
-            # for i in {1..50}; do
-            # STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8080/greet?name=Sachin || true)
-            # if [ "$STATUS" = "200" ]; then
-                # echo " Application is healthy!"
-                # exit 0
-            # fi
-                # echo "Health not ready yet... retry ($i/50)"
-            # sleep 1
-            # done
-            # echo " Timeout reached — application is not healthy!"
-            # exit 1
-            
-            
+    
       - name: Wait for application & greet with timeout
         run: |
             echo "Waiting for /greet endpoint (timeout 50s)..."
@@ -86,7 +72,19 @@ jobs:
             echo "Stopping application with PID $PID"
             kill $PID || true
             fi
+        
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+            name: jacoco-coverage-report
+            path: target/site/jacoco
 
+      - name: Download JaCoCo Coverage Report
+        uses: actions/download-artifact@v4
+        with:
+            name: jacoco-coverage-report
+            path: jacoco-report
+        
       #- name: Generate SpotBugs report
        # run: mvn spotbugs:spotbugs
 
@@ -118,12 +116,5 @@ jobs:
           # path: |
             # target/spotbugs.html
             # target/spotbugsXml.xml
-
-      # - name: Upload JaCoCo Coverage Report
-        # uses: actions/upload-artifact@v4
-        # with:
-          # name: jacoco-report
-          # path: target/site/jacoco/
-
 
 
