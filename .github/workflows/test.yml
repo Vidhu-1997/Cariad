@@ -33,7 +33,7 @@ jobs:
 
       - name: Wait for application & health-check with timeout
         run: |
-            echo "Waiting for application to become healthy (timeout 30s)..."
+            echo "Waiting for application to become healthy (timeout 50s)..."
             for i in {1..50}; do
             STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8080/health || true)
             if [ "$STATUS" = "200" ]; then
@@ -45,7 +45,39 @@ jobs:
             done
             echo " Timeout reached — application is not healthy!"
             exit 1
-
+        
+        
+      # - name: Wait for application & greet with timeout
+        # run: |
+            # echo "Waiting for application to greet (timeout 50s)..."
+            # for i in {1..50}; do
+            # STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8080/greet?name=Sachin || true)
+            # if [ "$STATUS" = "200" ]; then
+                # echo " Application is healthy!"
+                # exit 0
+            # fi
+                # echo "Health not ready yet... retry ($i/50)"
+            # sleep 1
+            # done
+            # echo " Timeout reached — application is not healthy!"
+            # exit 1
+            
+            
+      - name: Wait for application & greet with timeout
+        run: |
+            echo "Waiting for /greet endpoint (timeout 50s)..."
+            for i in {1..50}; do
+            RESPONSE=$(curl -s http://localhost:8080/greet?name=Sachin || true)
+            if [ ! -z "$RESPONSE" ]; then
+                echo "$RESPONSE"
+                exit 0
+            fi
+                echo "Endpoint not ready yet... retry ($i/50)"
+            sleep 1
+            done
+            echo " Timeout reached — application is not ready"
+            exit 1    
+        
       - name: Stop application
         if: always()
         run: |
@@ -92,3 +124,6 @@ jobs:
         # with:
           # name: jacoco-report
           # path: target/site/jacoco/
+
+
+
