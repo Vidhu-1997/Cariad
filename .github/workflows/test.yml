@@ -22,70 +22,67 @@ jobs:
           java-version: 17
 
       - name: Build and run tests
-        run: |   
-            mvn -B clean verify
-            mvn jacoco:report
+        run: |
+          mvn -B clean verify
+          mvn jacoco:report
 
       - name: Start application
         run: |
-            echo "Starting Spring Boot application..."
-            nohup java -jar target/demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
-            APP_PID=$!
-            echo "App PID: $APP_PID"
-            echo $APP_PID > app.pid
+          echo "Starting Spring Boot application..."
+          nohup java -jar target/demo-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+          APP_PID=$!
+          echo "App PID: $APP_PID"
+          echo $APP_PID > app.pid
 
       - name: Wait for application & health-check with timeout
         run: |
-            echo "Waiting for application to become healthy (timeout 20s)..."
-            for i in {1..20}; do
+          echo "Waiting for application to become healthy (timeout 20s)..."
+          for i in {1..20}; do
             STATUS=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8080/health || true)
             if [ "$STATUS" = "200" ]; then
-                echo " Application is healthy!"
-                exit 0
+              echo " Application is healthy!"
+              exit 0
             fi
-                echo "Health not ready yet... retry ($i/20)"
+            echo "Health not ready yet... retry ($i/20)"
             sleep 1
-            done
-            echo " Timeout reached — application is not healthy!"
-            exit 1
-    
+          done
+          echo " Timeout reached — application is not healthy!"
+          exit 1
+
       - name: Wait for application & greet with timeout
         run: |
-            echo "Waiting for /greet endpoint (timeout 20s)..."
-            for i in {1..20}; do
+          echo "Waiting for /greet endpoint (timeout 20s)..."
+          for i in {1..20}; do
             RESPONSE=$(curl -s http://localhost:8080/greet?name=Sachin || true)
             if [ ! -z "$RESPONSE" ]; then
-                echo "$RESPONSE"
-                exit 0
+              echo "$RESPONSE"
+              exit 0
             fi
-                echo "Endpoint not ready yet... retry ($i/50)"
+            echo "Endpoint not ready yet... retry ($i/20)"
             sleep 1
-            done
-            echo " Timeout reached — application is not ready"
-            exit 1    
-        
+          done
+          echo " Timeout reached — application is not ready"
+          exit 1
+
       - name: Stop application
         if: always()
         run: |
-            if [ -f app.pid ]; then
+          if [ -f app.pid ]; then
             PID=$(cat app.pid)
             echo "Stopping application with PID $PID"
             kill $PID || true
-            fi
-        
+          fi
+
       - name: Upload JaCoCo Coverage Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-            name: jacoco-coverage-report
-            path: target/site/jacoco
+          name: jacoco-coverage-report
+          path: target/site/jacoco
 
-      
-        
       - name: Generate SpotBugs report
-       run: mvn spotbugs:spotbugs
-       
-       
+        run: mvn spotbugs:spotbugs
+
       - name: Upload SpotBugs Report (HTML/XML)
         if: always()
         uses: actions/upload-artifact@v4
@@ -115,19 +112,17 @@ jobs:
         with:
           name: raw-target-folder
           path: target/
-          
+
       - name: Download JaCoCo Coverage Report
         if: always()
         uses: actions/download-artifact@v4
         with:
-            name: jacoco-coverage-report
-            path: jacoco-report  
+          name: jacoco-coverage-report
+          path: jacoco-report
 
-      
       - name: Download SpotBugs Report
         if: always()
         uses: actions/download-artifact@v4
         with:
-            name: spotbugs-report
-            path: spotbugs-report
-
+          name: spotbugs-report
+          path: spotbugs-report
