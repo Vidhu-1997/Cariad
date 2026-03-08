@@ -80,15 +80,20 @@ jobs:
             name: jacoco-coverage-report
             path: target/site/jacoco
 
-      - name: Download JaCoCo Coverage Report
-        if: always()
-        uses: actions/download-artifact@v4
-        with:
-            name: jacoco-coverage-report
-            path: jacoco-report
+      
         
-      #- name: Generate SpotBugs report
-       # run: mvn spotbugs:spotbugs
+      - name: Generate SpotBugs report
+       run: mvn spotbugs:spotbugs
+       
+       
+      - name: Upload SpotBugs Report (HTML/XML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: |
+            target/spotbugs.html
+            target/spotbugsXml.xml
 
       - name: Archive raw build outputs
         uses: actions/upload-artifact@v4
@@ -110,13 +115,19 @@ jobs:
         with:
           name: raw-target-folder
           path: target/
+          
+      - name: Download JaCoCo Coverage Report
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+            name: jacoco-coverage-report
+            path: jacoco-report  
 
-      # - name: Upload SpotBugs Report (HTML/XML)
-        # uses: actions/upload-artifact@v4
-        # with:
-          # name: spotbugs-report
-          # path: |
-            # target/spotbugs.html
-            # target/spotbugsXml.xml
-
+      
+      - name: Download SpotBugs Report
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+            name: spotbugs-report
+            path: spotbugs-report
 
