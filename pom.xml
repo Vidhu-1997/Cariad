@@ -111,7 +111,7 @@
 					<effort>Max</effort>
 					<threshold>Low</threshold>
 					<xmlOutput>true</xmlOutput>
-					<htmlOutput>true</htmlOutput>
+					<htmlOutput>false</htmlOutput>
 					<failOnBrokenClasspath>true</failOnBrokenClasspath>
 				</configuration>
 			</plugin>
